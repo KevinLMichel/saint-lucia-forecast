@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Saint Lucia Election Predictions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Independent Saint Lucia election prediction dashboard powered by your spreadsheet." />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --bg-alt: #09090b;
+      --card: #18181b;
+      --border: #27272a;
+      --text: #e4e4e7;
+      --muted: #a1a1aa;
+      --accent: #4ade80;
+      --danger: #f97373;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 45%);
+      color: var(--text);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.75);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      height: 36px;
+      width: 36px;
+      border-radius: 12px;
+      background: #111827;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .nav-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .nav-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .nav-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .card {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(24,24,27,0.96);
+      padding: 16px;
+    }
+    .card + .card {
+      margin-top: 16px;
+    }
+    .controls-grid,
+    .stats-grid {
+      display: grid;
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .controls-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .stats-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .seat-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    }
+    @media (max-width: 767px) {
+      .seat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    .control-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    select {
+      width: 100%;
+      background: #020617;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    button, label.button-like {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover, label.button-like:hover {
+      border-color: #3f3f46;
+      background: #030712;
+    }
+    input[type="file"] { display: none; }
+    .stat-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #0a0a0b;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-icon {
+      padding: 6px;
+      border-radius: 12px;
+      background: #111827;
+      font-size: 14px;
+    }
+    .stat-title {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .muted {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .seat-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .seat-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #050509;
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .seat-card:hover {
+      border-color: #3f3f46;
+      transform: translateY(-1px);
+    }
+    .seat-name {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .seat-leader {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag {
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .seat-meta {
+      text-align: right;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .progress-wrap {
+      margin-top: 8px;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: #18181b;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #18181b;
+    }
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+    }
+    tr:hover td {
+      background: #050509;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      background: #111827;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 40px 0 20px;
+    }
+  </style>
+
+  <!-- React, ReactDOM, Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Recharts, XLSX, PapaParse -->
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="nav-left">
+        <div class="logo">SL</div>
+        <div>
+          <div class="nav-title">Saint Lucia Election Predictions</div>
+          <div class="nav-sub">Spreadsheet powered forecast dashboard</div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <span>Forecasts</span>
+        <span>Matchups</span>
+        <span>Seat map</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="root"></div>
+  </main>
+
+  <footer>
+    Built for clarity and transparency. Data is provided by the site owner, not by any election authority.
+  </footer>
+
+  <script type="text/babel" data-presets="env,react">
+const {
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine
+} = window.Recharts || {};
+
+    const SAINT_LUCIA_SEATS = [
+      "Gros Islet",
+      "Babonneau",
+      "Castries North",
+      "Castries East",
+      "Castries Central",
+      "Castries South",
+      "Castries South East",
+      "Anse la Raye/Canaries",
+      "Soufrière/Fond St. Jacques",
+      "Choiseul/Saltibus",
+      "Laborie/Augier",
+      "Vieux Fort North",
+      "Vieux Fort South",
+      "Dennery North",
+      "Dennery South",
+      "Micoud North",
+      "Micoud South"
+    ];
+
+    const PARTY_COLORS = {
+      SLP: "#d00000",
+      UWP: "#f1c40f",
+      IND: "#7f8c8d",
+      OTHER: "#8e44ad"
+    };
+
+    function unique(arr) {
+      return Array.from(new Set(arr));
+    }
+
+    function parsePct(n) {
+      if (n === undefined || n === null || n === "") return undefined;
+      const v = typeof n === "string" ? Number(n.replace(/%/g, "").trim()) : Number(n);
+      if (!isFinite(v)) return undefined;
+      if (v >= 0 && v <= 1) return v * 100;
+      return v;
+    }
+
+    function isoDay(d) {
+      if (!d) return undefined;
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return undefined;
+      return dt.toISOString().slice(0, 10);
+    }
+
+    function normParty(p) {
+      return String(p || "").trim().toUpperCase();
+    }
+
+    function generateDemoData() {
+      const dates = ["2025-10-20", "2025-11-01", "2025-11-10"];
+      let x = 42;
+      function rand() {
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return (x >>> 0) / 0xffffffff;
+      }
+      const rows = [];
+      // national
+      dates.forEach(d => {
+        const slp = 48 + (rand() - 0.5) * 4;
+        const uwp = 47 + (rand() - 0.5) * 4;
+        const other = Math.max(0, 100 - slp - uwp);
+        rows.push({ date: d, scope: "national", party: "SLP", vote: slp });
+        rows.push({ date: d, scope: "national", party: "UWP", vote: uwp });
+        rows.push({ date: d, scope: "national", party: "OTHER", vote: other });
+      });
+      // seats
+      SAINT_LUCIA_SEATS.forEach(seat => {
+        let base = rand();
+        dates.forEach(d => {
+          let slp = 46 + (rand() - 0.5) * 8 + base * 4;
+          let uwp = 46 + (rand() - 0.5) * 8 + (1 - base) * 4;
+          const total = Math.max(0, slp + uwp);
+          const other = Math.max(0, 100 - total);
+          const margin = Math.abs(slp - uwp);
+          const leader = slp >= uwp ? "SLP" : "UWP";
+          const prob = Math.min(0.98, 0.5 + margin / 30);
+          rows.push({
+            date: d,
+            scope: "constituency",
+            constituency: seat,
+            party: "SLP",
+            vote: Math.max(0, Math.min(100, slp)),
+            prob_win: leader === "SLP" ? prob : 1 - prob
+          });
+          rows.push({
+            date: d,
+            scope: "constituency",
+            constituency: seat,
+            party: "UWP",
+            vote: Math.max(0, Math.min(100, uwp)),
+            prob_win: leader === "UWP" ? prob : 1 - prob
+          });
+          if (other > 0) {
+            rows.push({
+              date: d,
+              scope: "constituency",
+              constituency: seat,
+              party: "OTHER",
+              vote: other
+            });
+          }
+        });
+      });
+      rows.sort((a, b) => a.date.localeCompare(b.date));
+      return rows;
+    }
+
+    function normalizeHeaders(obj) {
+      const out = {};
+      Object.entries(obj).forEach(([key, val]) => {
+        const k = key.toLowerCase().trim();
+        if (k === "date" || k === "poll_date") out.date = isoDay(val);
+        else if (k === "constituency" || k === "seat") out.constituency = String(val || "").trim();
+        else if (k === "party" || k === "parties") out.party = normParty(val);
+        else if (["vote_share","vote","pct","share","%"].includes(k)) out.vote = parsePct(val);
+        else if (["prob_win","probability","prob"].includes(k)) out.prob_win = (parsePct(val) ?? 0) / 100;
+        else if (["pollster","source"].includes(k)) out.pollster = String(val || "").trim();
+        else if (["sample_size","n","sample"].includes(k)) out.sample_size = Number(val);
+        else if (k === "scope") out.scope = String(val || "").trim().toLowerCase();
+        else if (["source_url","url","link"].includes(k)) out.source_url = String(val || "").trim();
+        else if (k === "model_version") out.model_version = String(val || "").trim();
+      });
+      return out;
+    }
+
+    function coerceRow(row) {
+      const r = normalizeHeaders(row);
+      const date = r.date || isoDay(r.Date);
+      const party = normParty(r.party);
+      const vote = typeof r.vote === "number" && isFinite(r.vote) ? r.vote : undefined;
+      const scope = r.scope === "national" ? "national" : "constituency";
+      if (!date || !party || vote === undefined) return null;
+      const out = { date, party, vote, prob_win: r.prob_win, scope };
+      if (scope === "constituency") out.constituency = r.constituency || r.seat;
+      if (r.pollster) out.pollster = r.pollster;
+      if (r.sample_size) out.sample_size = r.sample_size;
+      if (r.source_url) out.source_url = r.source_url;
+      if (r.model_version) out.model_version = r.model_version;
+      return out;
+    }
+
+    function parseExcel(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: "array" });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+            const rows = [];
+            json.forEach(j => {
+              const r = coerceRow(j);
+              if (r) rows.push(r);
+            });
+            resolve(rows);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = err => reject(err);
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function parseCSVFile(file) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: res => {
+            try {
+              const rows = [];
+              res.data.forEach(j => {
+                const r = coerceRow(j);
+                if (r) rows.push(r);
+              });
+              resolve(rows);
+            } catch (e) {
+              reject(e);
+            }
+          },
+          error: err => reject(err)
+        });
+      });
+    }
+
+    function latestSeatSnapshot(rows, asOf) {
+      const seats = new Map();
+      rows
+        .filter(r => r.scope !== "national" && r.constituency && r.date <= asOf)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .forEach(r => {
+          const seat = r.constituency;
+          if (!seats.has(seat)) seats.set(seat, new Map());
+          seats.get(seat).set(r.party, r);
+        });
+      return seats;
+    }
+
+    function classifySeat(partyMap) {
+      const entries = Array.from(partyMap.entries()).map(([party, r]) => ({
+        party,
+        vote: r.vote,
+        prob: r.prob_win
+      }));
+      entries.sort((a, b) => b.vote - a.vote);
+      if (!entries.length) return {};
+      const top = entries[0];
+      const second = entries[1];
+      const margin = second ? top.vote - second.vote : top.vote;
+      const p = typeof top.prob === "number" ? top.prob : undefined;
+      let bands = "Toss-up";
+      if (p !== undefined) {
+        if (p >= 0.95) bands = "Safe";
+        else if (p >= 0.75) bands = "Likely";
+        else if (p >= 0.60) bands = "Lean";
+        else bands = "Toss-up";
+      } else {
+        if (margin >= 15) bands = "Safe";
+        else if (margin >= 8) bands = "Likely";
+        else if (margin >= 4) bands = "Lean";
+        else bands = "Toss-up";
+      }
+      return {
+        leader: top.party,
+        second: second && second.party,
+        margin,
+        prob: p,
+        bands,
+        topShare: top.vote
+      };
+    }
+
+    function sumExpectedSeats(rows, asOf) {
+      const seats = latestSeatSnapshot(rows, asOf);
+      const exp = new Map();
+      for (const [, partyMap] of seats) {
+        const probs = Array.from(partyMap.values()).filter(r => typeof r.prob_win === "number");
+        if (probs.length) {
+          const total = probs.reduce((a, b) => a + (b.prob_win || 0), 0) || 1;
+          for (const r of probs) {
+            const add = (r.prob_win || 0) / (total > 1 ? total : 1);
+            exp.set(r.party, (exp.get(r.party) || 0) + add);
+          }
+        } else {
+          const info = classifySeat(partyMap);
+          if (info.leader) exp.set(info.leader, (exp.get(info.leader) || 0) + 1);
+        }
+      }
+      return exp;
+    }
+
+    function pointEstimateSeats(rows, asOf) {
+      const seats = latestSeatSnapshot(rows, asOf);
+      const counts = new Map();
+      for (const [, partyMap] of seats) {
+        const info = classifySeat(partyMap);
+        if (info.leader) counts.set(info.leader, (counts.get(info.leader) || 0) + 1);
+      }
+      return counts;
+    }
+
+    function buildNationalSeries(rows) {
+      const national = rows.filter(r => r.scope === "national");
+      const byDate = new Map();
+      if (national.length) {
+        national.forEach(r => {
+          if (!byDate.has(r.date)) byDate.set(r.date, new Map());
+          byDate.get(r.date).set(r.party, r.vote);
+        });
+      } else {
+        const dates = unique(rows.map(r => r.date)).sort();
+        dates.forEach(d => {
+          const seats = latestSeatSnapshot(rows, d);
+          const agg = new Map();
+          let denom = 0;
+          for (const [, pm] of seats) {
+            denom++;
+            for (const [party, r] of pm) {
+              agg.set(party, (agg.get(party) || 0) + r.vote);
+            }
+          }
+          if (denom > 0) {
+            for (const [party, sum] of agg) {
+              agg.set(party, sum / denom);
+            }
+          }
+          byDate.set(d, agg);
+        });
+      }
+      const parties = unique(Array.from(byDate.values()).flatMap(m => Array.from(m.keys())));
+      return Array.from(byDate.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([date, m]) => {
+          const row = { date };
+          parties.forEach(p => {
+            row[p] = m.get(p) ?? 0;
+          });
+          return row;
+        });
+    }
+
+    function prettyDate(d) {
+      if (!d) return "";
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return d;
+      return dt.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function StatCard({ title, value, icon }) {
+      return (
+        <div className="stat-card">
+          <div className="stat-icon">{icon}</div>
+          <div>
+            <div className="stat-title">{title}</div>
+            <div className="stat-value">{value}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function Tag({ children, color }) {
+      return (
+        <span
+          className="tag"
+          style={{
+            backgroundColor: color + "22",
+            color
+          }}
+        >
+          {children}
+        </span>
+      );
+    }
+
+    function Progress({ value, color }) {
+      const v = Math.max(0, Math.min(100, value));
+      return (
+        <div className="progress-wrap">
+          <div
+            className="progress-bar"
+            style={{
+              width: v + "%",
+              backgroundColor: color
+            }}
+          />
+        </div>
+      );
+    }
+
+    function SeatCard({ seat, partyMap, onClick }) {
+      const info = partyMap ? classifySeat(partyMap) : {};
+      const color = info.leader ? (PARTY_COLORS[info.leader] || "#4b5563") : "#4b5563";
+      const progVal =
+        typeof info.prob === "number"
+          ? info.prob * 100
+          : typeof info.margin === "number"
+          ? Math.min(100, Math.max(0, (info.margin / 20) * 100))
+          : 0;
+      return (
+        <button className="seat-card" onClick={onClick}>
+          <div className="row" style={{ alignItems: "flex-start" }}>
+            <div>
+              <div className="seat-name">{seat}</div>
+              <div className="seat-leader">
+                {info.leader || "No data"}
+                {info.leader && <Tag color={color}>{info.bands}</Tag>}
+              </div>
+            </div>
+            <div className="seat-meta">
+              {typeof info.margin === "number" && <div>Lead {info.margin.toFixed(1)} pts</div>}
+              {typeof info.prob === "number" && <div>Prob {Math.round(info.prob * 100)}%</div>}
+              {typeof info.topShare === "number" && <div>Share {info.topShare.toFixed(1)}%</div>}
+            </div>
+          </div>
+          <Progress value={progVal} color={color} />
+        </button>
+      );
+    }
+
+    function App() {
+      const [rows, setRows] = React.useState(generateDemoData());
+      const [selectedDate, setSelectedDate] = React.useState("");
+      const [selectedSeat, setSelectedSeat] = React.useState(SAINT_LUCIA_SEATS[0]);
+      const fileRef = React.useRef(null);
+
+      const allDates = React.useMemo(
+        () => unique(rows.map(r => r.date)).sort(),
+        [rows]
+      );
+
+      React.useEffect(() => {
+        if (!selectedDate && allDates.length) {
+          setSelectedDate(allDates[allDates.length - 1]);
+        }
+      }, [allDates, selectedDate]);
+
+      const parties = React.useMemo(
+        () => unique(rows.map(r => r.party)).sort(),
+        [rows]
+      );
+
+      const seatsSnapshot = React.useMemo(
+        () => (selectedDate ? latestSeatSnapshot(rows, selectedDate) : new Map()),
+        [rows, selectedDate]
+      );
+
+      const nationalSeries = React.useMemo(
+        () => buildNationalSeries(rows),
+        [rows]
+      );
+
+      const stats = React.useMemo(() => {
+        if (!selectedDate) return null;
+        const expected = sumExpectedSeats(rows, selectedDate);
+        const point = pointEstimateSeats(rows, selectedDate);
+        const totalSeats = SAINT_LUCIA_SEATS.length;
+        const tossups = Array.from(seatsSnapshot.entries()).filter(
+          ([, m]) => classifySeat(m).bands === "Toss-up"
+        ).length;
+        const lastUpdated = allDates[allDates.length - 1];
+        const main = parties.filter(p => p === "SLP" || p === "UWP");
+        const p1 = main[0] || parties[0] || "SLP";
+        const p2 = main[1] || parties[1] || "UWP";
+        const exp1 = expected.get(p1) || 0;
+        const exp2 = expected.get(p2) || 0;
+        const pt1 = point.get(p1) || 0;
+        const pt2 = point.get(p2) || 0;
+        return { expected, point, totalSeats, tossups, lastUpdated, p1, p2, exp1, exp2, pt1, pt2 };
+      }, [rows, selectedDate, seatsSnapshot, parties, allDates]);
+
+      const seatTrendSeries = React.useMemo(() => {
+        const series = new Map();
+        rows.forEach(r => {
+          if (r.scope === "constituency" && r.constituency === selectedSeat) {
+            if (!series.has(r.date)) series.set(r.date, new Map());
+            series.get(r.date).set(r.party, r.vote);
+          }
+        });
+        const parts = unique(
+          Array.from(series.values()).flatMap(m => Array.from(m.keys()))
+        );
+        return Array.from(series.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([date, m]) => {
+            const row = { date };
+            parts.forEach(p => {
+              row[p] = m.get(p) ?? 0;
+            });
+            return row;
+          });
+      }, [rows, selectedSeat]);
+
+      function colorForParty(party) {
+        return PARTY_COLORS[party] || "#22c55e";
+      }
+
+      async function handleFileChange(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const name = file.name.toLowerCase();
+        try {
+          let parsed = [];
+          if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+            parsed = await parseExcel(file);
+          } else if (name.endsWith(".csv")) {
+            parsed = await parseCSVFile(file);
+          } else {
+            throw new Error("Please upload .xlsx, .xls, or .csv");
+          }
+          if (!parsed.length) throw new Error("No usable rows found. Check headers.");
+          parsed.sort((a, b) => a.date.localeCompare(b.date));
+          setRows(parsed);
+          const ds = unique(parsed.map(r => r.date)).sort();
+          setSelectedDate(ds[ds.length - 1]);
+        } catch (err) {
+          alert(err.message || String(err));
+        } finally {
+          if (fileRef.current) fileRef.current.value = "";
+        }
+      }
+
+      function downloadTemplate() {
+        const headers =
+          "date,constituency,party,vote_share,prob_win,pollster,sample_size,scope,source_url,model_version";
+        const sample = [
+          "2025-10-20,Gros Islet,SLP,48.2,0.62,Example Pollster,600,constituency,https://example.com/poll,modelA",
+          "2025-10-20,Gros Islet,UWP,47.1,0.38,Example Pollster,600,constituency,https://example.com/poll,modelA",
+          "2025-10-20,,SLP,48,,Example Aggregation,,national,,modelA",
+          "2025-10-20,,UWP,47,,Example Aggregation,,national,,modelA"
+        ].join("\n");
+        const blob = new Blob([headers + "\n" + sample + "\n"], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "stlucia_predictions_template.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function resetDemo() {
+        const demo = generateDemoData();
+        setRows(demo);
+        const ds = unique(demo.map(r => r.date)).sort();
+        setSelectedDate(ds[ds.length - 1]);
+      }
+
+      const snapshotTable = React.useMemo(() => {
+        if (!selectedDate) return [];
+        const snap = latestSeatSnapshot(rows, selectedDate);
+        return SAINT_LUCIA_SEATS.map(seat => {
+          const info = classifySeat(snap.get(seat) || new Map());
+          return {
+            seat,
+            leader: info.leader,
+            margin: info.margin,
+            prob: info.prob,
+            bands: info.bands
+          };
+        });
+      }, [rows, selectedDate]);
+
+      return (
+        <div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="row">
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>Spreadsheet inputs</div>
+                <div className="muted">
+                  Use the template, fill in predictions, then upload your CSV or Excel file.
+                </div>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button onClick={downloadTemplate}>Download template CSV</button>
+                <button onClick={resetDemo}>Reset to demo data</button>
+                <label className="button-like">
+                  <span>Upload .xlsx or .csv</span>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="controls-grid card">
+            <div>
+              <div className="control-label">As of date</div>
+              <select
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+              >
+                {allDates.map(d => (
+                  <option key={d} value={d}>
+                    {prettyDate(d)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div className="control-label">Constituency</div>
+              <select
+                value={selectedSeat}
+                onChange={e => setSelectedSeat(e.target.value)}
+              >
+                {SAINT_LUCIA_SEATS.map(s => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div className="control-label">Data summary</div>
+              <div style={{ fontSize: 13 }}>
+                Rows <strong>{rows.length}</strong>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                Dates <strong>{allDates.length}</strong>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                Parties <strong>{parties.length}</strong>
+              </div>
+            </div>
+          </div>
+
+          {stats && (
+            <div className="stats-grid" style={{ marginTop: 16 }}>
+              <StatCard
+                title={`Expected seats (${stats.p1})`}
+                value={`${stats.exp1.toFixed(1)} / ${stats.totalSeats}`}
+                icon="①"
+              />
+              <StatCard
+                title={`Expected seats (${stats.p2})`}
+                value={`${stats.exp2.toFixed(1)} / ${stats.totalSeats}`}
+                icon="②"
+              />
+              <StatCard
+                title={`Point estimate ${stats.p1}`}
+                value={`${stats.pt1} seats`}
+                icon="◎"
+              />
+              <StatCard
+                title="Toss-up seats"
+                value={String(stats.tossups)}
+                icon="?"
+              />
+            </div>
+          )}
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="row" style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>
+                National vote share over time
+              </div>
+              <div className="muted">
+                Updated {prettyDate(stats && stats.lastUpdated)}
+              </div>
+            </div>
+            <div style={{ width: "100%", height: 280 }}>
+              <ResponsiveContainer>
+                <LineChart
+                  data={nationalSeries}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid stroke="#27272a" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#a1a1aa"
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    stroke="#a1a1aa"
+                    domain={[0, 100]}
+                    tickFormatter={v => v + "%"}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip
+                    formatter={v => Number(v).toFixed(1) + "%"}
+                    contentStyle={{
+                      background: "#020617",
+                      border: "1px solid #27272a",
+                      borderRadius: 12,
+                      fontSize: 12
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 11 }} />
+                  {parties.map(p => (
+                    <Line
+                      key={p}
+                      type="monotone"
+                      dataKey={p}
+                      stroke={colorForParty(p)}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  ))}
+                  <ReferenceLine y={50} stroke="#3f3f46" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+              {selectedSeat} trend
+            </div>
+            <div style={{ width: "100%", height: 260 }}>
+              <ResponsiveContainer>
+                <LineChart
+                  data={seatTrendSeries}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid stroke="#27272a" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#a1a1aa"
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    stroke="#a1a1aa"
+                    domain={[0, 100]}
+                    tickFormatter={v => v + "%"}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip
+                    formatter={v => Number(v).toFixed(1) + "%"}
+                    contentStyle={{
+                      background: "#020617",
+                      border: "1px solid #27272a",
+                      borderRadius: 12,
+                      fontSize: 12
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: "#d4d4d8", fontSize: 11 }} />
+                  {parties.map(p => (
+                    <Line
+                      key={p}
+                      type="monotone"
+                      dataKey={p}
+                      stroke={colorForParty(p)}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              Seat snapshot as of {prettyDate(selectedDate)}
+            </div>
+            <div className="seat-grid">
+              {SAINT_LUCIA_SEATS.map(seat => (
+                <SeatCard
+                  key={seat}
+                  seat={seat}
+                  partyMap={seatsSnapshot.get(seat)}
+                  onClick={() => setSelectedSeat(seat)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 16, overflowX: "auto" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              Latest snapshot table
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Constituency</th>
+                  <th>Leader</th>
+                  <th>Margin</th>
+                  <th>Probability</th>
+                  <th>Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snapshotTable.map(row => (
+                  <tr key={row.seat}>
+                    <td>{row.seat}</td>
+                    <td>{row.leader || "–"}</td>
+                    <td>
+                      {typeof row.margin === "number"
+                        ? row.margin.toFixed(1) + " pts"
+                        : "–"}
+                    </td>
+                    <td>
+                      {typeof row.prob === "number"
+                        ? Math.round(row.prob * 100) + "%"
+                        : "–"}
+                    </td>
+                    <td>{row.bands || "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>
+              How to use this dashboard
+            </div>
+            <ol style={{ fontSize: 13, paddingLeft: 18 }}>
+              <li>
+                Click <code>Download template CSV</code> and open it in Excel.
+              </li>
+              <li>
+                For each poll or model run, add a row with
+                {" "}
+                <code>date</code>, <code>constituency</code>,
+                {" "}
+                <code>party</code>, <code>vote_share</code> and optional
+                {" "}
+                <code>prob_win</code>.
+              </li>
+              <li>
+                Use <code>scope = national</code> and leave
+                {" "}
+                <code>constituency</code> blank for national rows.
+              </li>
+              <li>
+                Save as <code>.xlsx</code> or <code>.csv</code> and upload with the button above.
+              </li>
+            </ol>
+            <div className="muted" style={{ marginTop: 6 }}>
+              If you provide probabilities, ratings use probability bands. If not, they use vote margins.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
